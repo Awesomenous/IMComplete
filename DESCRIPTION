@@ -1,0 +1,41 @@
+Package: IMComplete
+Type: Package
+Title: An end-to-end pipeline for IMC analysis
+Version: 0.1.0
+Author: Oscar Dong
+Maintainer: Oscar Dong <oscardong4@gmail.com>
+Description: IMComplete provides a comprehensive and automated pipeline for 
+    analyzing Imaging Mass Cytometry (IMC) data. It enables efficient preprocessing, 
+    visualisation, and annotation of IMC datasets, with functionalities for 
+    batch correction, dimensionality reduction, clustering, and marker expression 
+    analysis. The package is designed for both novice and advanced users, offering 
+    user-friendly defaults while allowing detailed customization.
+License: GPL (>=2)
+Encoding: UTF-8
+LazyData: true
+Imports:
+    RColorBrewer,
+    Rphenograph,
+    S4Vectors,
+    Seurat,
+    SingleCellExperiment,
+    SpatialExperiment,
+    SummarizedExperiment,
+    dittoSeq,
+    dplyr,
+    flowCore,
+    ggplot2,
+    ggridges,
+    igraph,
+    ijtiff,
+    patchwork,
+    rlang,
+    scater,
+    scuttle,
+    stats,
+    stringr,
+    tiff,
+    utils,
+    magrittr,
+    methods
+RoxygenNote: 7.3.2
