@@ -5,7 +5,7 @@
 #'
 #' @param object A `SpatialExperiment` object.
 #' @param assay_name A character string specifying the assay to export. Default
-#'   is `"standardised"`.
+#'   is `"scale.data"`.
 #' @param export_path A character string specifying the directory to save the
 #'   exported FCS files. Default is `"FlowJo"`.
 #' @param analysis_path A character string specifying the path to analysis data.
@@ -20,20 +20,21 @@
 #' @examples
 #' ExportFCS(object = spe, assay_name = "standardised", export_path = "FlowJo")
 ExportFCS <- function(object,
-                      assay_name = "standardised",
-                      export_path = "FlowJo",
-                      analysis_path = "analysis") {
+                      extra_metadata = NULL,
+                      assay_name = "scale.data",
+                      export_path = "5_R_analysis/FlowJo") {
 
     # Read image data
-    image <- utils::read.csv(
-        file.path(analysis_path, "5_cellprofiler_output", "Image.csv")
-    ) %>%
-        dplyr::select(ImageNumber) %>%
-        dplyr::rename(ImageID = ImageNumber)
+    image <- utils::read.csv("image.csv")
 
     # Extract metadata
+    metadata_list <- c("ImageID", "CellID", "Area", "ImShort")
+    if (!is.null(extra_metadata)) {
+        metadata_list <- unique(c(metadata_list, extra_metadata[extra_metadata %in% colnames(SummarizedExperiment::colData(object))])) # COME BACK HERE
+    }
+
     metadata <- as.data.frame(SummarizedExperiment::colData(object)) %>%
-        dplyr::select(ImageID, uCellID, CellID, Area, ImShort)
+        dplyr::select(any_of(metadata_list))
 
     # Extract assay data
     assayData <- as.data.frame(
@@ -50,7 +51,7 @@ ExportFCS <- function(object,
     df <- df %>%
         dplyr::left_join(image, by = "ImageID") %>%
         dplyr::group_by(ImageID) %>%
-        dplyr::mutate(Y = max(Y) - Y) %>%
+        dplyr::mutate(Y = max(Y) - Y) %>% # CHECK IF IMAGE IS INVERTED
         dplyr::ungroup()
 
     # Ensure export directory exists
@@ -96,7 +97,7 @@ ExportFCS <- function(object,
 #'
 #' @param object A `SpatialExperiment` object.
 #' @param assay_name A character string specifying the assay to use for TIFF generation.
-#'   Default is `"standardised"`.
+#'   Default is `"scale.data"`.
 #' @param raw_path A character string specifying the path to raw data. Default is `"raw"`.
 #' @param analysis_path A character string specifying the path to analysis data.
 #'   Default is `"analysis"`.
@@ -112,90 +113,23 @@ ExportFCS <- function(object,
 #' @examples
 #' CreateMantisFolder(object = spe, raw_path = "raw", analysis_path = "analysis")
 CreateMantisFolder <- function(object,
-                               assay_name = "standardised",
-                               raw_path = "raw",
-                               analysis_path = "analysis",
-                               mantis_path = "MantisProject") {
+                               img_suffix = "_full.tiff",
+                               mask_suffix = "_CpSeg_mask.tif",
+                               assay_name = "scale.data",
+                               analysis_path = "analysis/3_segmentation",
+                               mantis_path = "5_R_analysis/MantisProject") {
 
     # Create 'MantisProject' folder
     dir.create(mantis_path, showWarnings = FALSE)
 
-    # List TIFFs and CSVs in the '1c_full_images' folder
-    tiffs <- list.files(
-        file.path(analysis_path, "1c_full_images"), pattern = "\\.tiff$"
-    )
-    csvs <- list.files(
-        file.path(analysis_path, "1c_full_images"), pattern = "\\.csv$"
-    )
+    # Load image names
+    image_df <- utils::read.csv("image.csv")
+    image_list <- image_df$Image
+    imshort_list <- image_df$ImShort
 
-    metadata <- as.data.frame(SummarizedExperiment::colData(object))
-
-    # Progress bar for generating individual channel images
-    pb1 <- utils::txtProgressBar(min = 0, max = length(tiffs), style = 3)
-    for (x in seq_along(tiffs)) {
-        # Extract the name of the current image from the filename
-        cur_img_full <- gsub(".{10}$", "", tiffs[x])
-
-        # Obtain corresponding 'ImShort' label
-        cur_img <- metadata %>%
-            dplyr::filter(Image == cur_img_full) %>%
-            dplyr::distinct(ImShort) %>%
-            dplyr::pull(ImShort)
-
-        # Create a new folder for the current image
-        dir.create(file.path(mantis_path, cur_img), showWarnings = FALSE)
-
-        # Read TIFF and CSV associated with the current image
-        cur_tiff <- suppressWarnings(
-            tiff::readTIFF(
-                file.path(analysis_path, "1c_full_images", tiffs[x]),
-                all = TRUE
-            )
-        )
-        cur_csv <- utils::read.csv(
-            file.path(analysis_path, "1c_full_images", csvs[x]),
-            header = FALSE
-        )$V1
-
-        # Save each individual channel in the TIFF as a separate image
-        panel = utils::read.csv(file.path(raw_path, "panel.csv"))
-        for (channel in seq_along(cur_tiff)) {
-            metal_tag <- cur_csv[channel]
-            marker <- panel$Target[panel$Metal.Tag == metal_tag]
-            filename <- file.path(
-                mantis_path,
-                cur_img,
-                paste0(marker, ".tiff")
-            )
-            mat <- cur_tiff[[channel]] * 65535
-            ijtiff::write_tif(mat, filename, overwrite = TRUE, msg = FALSE)
-        }
-        utils::setTxtProgressBar(pb1, x)
-    }
-    close(pb1)
-
-    # Progress bar for copying segmentation masks
-    seg_list <- list.files(
-        file.path(analysis_path, "3a_segmentation_masks"), pattern = "\\.tif$"
-    )
-    pb2 <- utils::txtProgressBar(min = 0, max = length(seg_list), style = 3)
-    for (i in seq_along(seg_list)) {
-        cur_dir <- seg_list[i]
-        cur_img_full <- gsub(".{23}$", "", cur_dir)
-
-        cur_img <- metadata %>%
-            dplyr::filter(Image == cur_img_full) %>%
-            dplyr::distinct(ImShort) %>%
-            dplyr::pull(ImShort)
-
-        new_dir <- file.path(mantis_path, cur_img, "SegmentationFile.tif")
-        file.copy(
-            file.path(analysis_path, "3a_segmentation_masks", cur_dir),
-            new_dir
-        )
-        utils::setTxtProgressBar(pb2, i)
-    }
-    close(pb2)
+    # Obtain panel
+    panel <- utils::read.csv("panel.csv") %>%
+        dplyr::filter(Full == 1)
 
     # Extract the full assay data (markers) and transpose it
     markers <- rownames(object)
@@ -207,23 +141,44 @@ CreateMantisFolder <- function(object,
     metadata <- as.data.frame(SummarizedExperiment::colData(object))
     marker_data <- cbind(metadata, marker_data)
 
-    # Progress bar for writing segment features
-    unique_imgs <- unique(SummarizedExperiment::colData(object)$ImShort)
-    pb3 <- utils::txtProgressBar(min = 0, max = length(unique_imgs), style = 3)
-    for (j in seq_along(unique_imgs)) {
-        img <- unique_imgs[j]
+    # Progress bar for generating individual channel images
+    pb <- utils::txtProgressBar(min = 0, max = length(image_list), style = 3)
+    for (x in seq_along(image_list)) {
+        # Create a new folder for the current image
+        dir.create(file.path(mantis_path, imshort_list[x]), showWarnings = FALSE)
 
-        # Filter combined data to keep only rows corresponding to images
-        filtered_data <- marker_data[marker_data$ImShort %in% c(img), ]
+        # Read TIFF and CSV associated with the current image
+        cur_tiff <- suppressWarnings(
+            tiff::readTIFF(
+                file.path(analysis_path, "3a_fullstack", paste0(image_list[x], img_suffix)),
+                all = TRUE
+            )
+        )
+
+        # Save each individual channel in the TIFF as a separate image
+        for (channel in seq_along(cur_tiff)) {
+            marker <- panel$Target[channel]
+            filename <- file.path(
+                mantis_path,
+                imshort_list[x],
+                paste0(marker, ".tiff")
+            )
+            mat <- cur_tiff[[channel]] * 65535
+            ijtiff::write_tif(mat, filename, overwrite = TRUE, msg = FALSE)
+        }
+
+        # Copy segmentation mask
+        file.copy(
+            file.path(analysis_path, "3e_cellpose_mask", paste0(image_list[x], mask_suffix)),
+            file.path(mantis_path, imshort_list[x], "SegmentationFile.tif")
+        )
+
+        # Filter combined data to keep only rows corresponding to image
+        filtered_data <- marker_data[marker_data$ImShort == imshort_list[x], ]
 
         # Select only relevant columns
-        selected_columns <- c("ImShort", "CellID", markers)
+        selected_columns <- c("CellID", markers)
         final_data <- filtered_data[, selected_columns]
-
-        # Check if all entries in the 'ImShort' column are the same
-        if (length(unique(final_data$ImShort)) == 1) {
-            final_data$ImShort <- NULL
-        }
 
         # Rename the remaining columns if necessary
         colnames(final_data)[
@@ -233,12 +188,13 @@ CreateMantisFolder <- function(object,
         # Save the final filtered and selected data to a CSV file
         utils::write.csv(
             final_data,
-            file.path(mantis_path, img, "SegmentFeatures.csv"),
+            file.path(mantis_path, imshort_list[x], "SegmentFeatures.csv"),
             row.names = FALSE
         )
-        utils::setTxtProgressBar(pb3, j)
+
+        utils::setTxtProgressBar(pb, x)
     }
-    close(pb3)
+    close(pb)
 }
 
 #' Import Data from FlowJo CSV Files
@@ -255,7 +211,7 @@ CreateMantisFolder <- function(object,
 #' @importFrom SummarizedExperiment colData
 #' @examples
 #' spe <- ImportFlowJoData(object = spe, FlowJo_path = "FlowJo")
-ImportFlowJoData <- function(object, FlowJo_path) {
+ImportFlowJoData <- function(object, FlowJo_path = "5_R_analysis/FlowJo") {
     # List exported CSVs from FlowJo
     csvs <- list.files(
         path = file.path(FlowJo_path, "Export"),
@@ -274,11 +230,13 @@ ImportFlowJoData <- function(object, FlowJo_path) {
     # Combine CSVs from FlowJo
     csvs <- lapply(csvs, add_celltype)
     flowjo_df <- dplyr::bind_rows(csvs) %>%
-        dplyr::select(uCellID, FlowJo_celltype)
+        dplyr::select(ImageID, CellID, FlowJo_celltype) %>%
+        dplyr::mutate(uCellID = paste0(ImageID, "_", CellID))
     flowjo_df$FlowJo_celltype <- as.factor(flowjo_df$FlowJo_celltype)
 
     # Extract existing metadata
-    metadata <- as.data.frame(SummarizedExperiment::colData(object))
+    metadata <- as.data.frame(SummarizedExperiment::colData(object)) %>%
+        dplyr::mutate(uCellID = paste0(ImageID, "_", CellID))
 
     # Remove old FlowJo annotations if they exist
     if ("FlowJo_celltype" %in% names(SummarizedExperiment::colData(object))) {
@@ -290,6 +248,10 @@ ImportFlowJoData <- function(object, FlowJo_path) {
     flowjo_df <- dplyr::left_join(metadata, flowjo_df, by = "uCellID")
 
     # Remove duplicates by keeping the first label for each cell
+    num_duplicates <- sum(duplicated(flowjo_df$uCellID))
+    message(paste(
+        num_duplicates, "cells found in multiple gates. First instance chosen."
+    ))
     flowjo_df <- flowjo_df[!duplicated(flowjo_df$uCellID), ]
 
     # Add FlowJo annotations to the object

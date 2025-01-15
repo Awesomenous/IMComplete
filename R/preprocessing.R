@@ -1,20 +1,3 @@
-#' Create Sorted Vector
-#'
-#' This function generates a sorted vector of integers from `1` to `n`.
-#' It sorts the integers as characters using the `radix` method for
-#' consistent lexical ordering.
-#'
-#' @param n An integer specifying the maximum value in the sequence to be sorted.
-#' @return A sorted integer vector from `1` to `n`.
-#' @examples
-#' CreateSortedVector(10)
-CreateSortedVector <- function(n) {
-    char_numbers = as.character(1:n)
-    sorted_char_numbers = sort(char_numbers, method = "radix")
-    sorted_numbers = as.integer(sorted_char_numbers)
-    return(sorted_numbers)
-}
-
 #' Create a SpatialExperiment Object
 #'
 #' This function creates a `SpatialExperiment` object by loading, filtering,
@@ -48,85 +31,34 @@ CreateSpatialExperiment <- function(to_remove,
                                     raw_path = "raw") {
     # Load CSVs
     cells <- utils::read.csv(
-        file.path(analysis_path, "5_cellprofiler_output", "cell.csv")
+        file.path(analysis_path, "4_pyprofiler_output", "cell.csv")
     )
-    panel <- utils::read.csv(
-        file.path(raw_path, "panel.csv")
-    )
-    image <- utils::read.csv(
-        file.path(analysis_path, "5_cellprofiler_output", "image.csv")
-    )
+    panel <- utils::read.csv("panel.csv")
+    image <- utils::read.csv("image.csv")
 
     # Filter rows and columns
-    image <- image %>%
-        dplyr::mutate(
-            Image = stringr::str_remove(FileName_FullStack , "_full\\.tiff"),
-            ROI = as.integer(
-                stringr::str_extract(FileName_FullStack , "(?<=a)\\d+(?=_ac)")
-            ) # <- NOT GENERALISED
-        ) %>%
-        dplyr::select(-FileName_FullStack)
     panel <- panel %>%
-        dplyr::filter(trimws(Target) != "") %>%
-        dplyr::rename(Metal = Metal.Tag) %>%
-        dplyr::filter(!(Metal %in% to_remove))
+        dplyr::filter(Full == 1)
 
     # Join image data with cell data
-    cellsCombined <- dplyr::left_join(
+    dt <- dplyr::left_join(
         cells,
         image,
-        by = dplyr::join_by(ImageNumber)
+        by = dplyr::join_by(Image)
     )
-
-    # Add 'ImageShort' column to dataframe <- NOT GENERALISED
-    cellsCombined <- cellsCombined %>%
-        dplyr::mutate(
-            ImShort = stringr::str_extract(Image, "(?<=_)[^_]+_s0_a\\d+")
-        ) %>%
-        dplyr::mutate(
-            ImShort = stringr::str_replace(ImShort, "_s0_a", "_")
-        )
-
-    # Define old column names and what to change them to
-    rename_vec <- c(
-        "Image" = "Image",
-        "ImShort" = "ImShort",
-        "ImageNumber" = "ImageID",
-        "ROI" = "ROI",
-        "ObjectNumber" = "CellID",
-        "AreaShape_Area" = "Area",
-        "AreaShape_Center_X" = "X",
-        "AreaShape_Center_Y" = "Y",
-        "DonorID" = "DonorID",
-        "Condition" = "Condition"
-    )
-
-    # Change names in 'cellsCombined' from old names to new names
-    names(cellsCombined) <- ifelse(
-        names(cellsCombined) %in% names(rename_vec),
-        rename_vec[names(cellsCombined)],
-        names(cellsCombined)
-    )
-
-    # Name marker columns
-    markers <- panel[,"Target"]
-    ordered_markers <- markers[CreateSortedVector(length(markers))]
-    colnames(cellsCombined)[6:(length(markers)+5)] <- ordered_markers
-
-    # Keep only desired columns
-    meta <- unname(sapply(strsplit(rename_vec, " = "), '[', 1))
-    keep <- c(meta, ordered_markers)
-    dt <- cellsCombined %>% dplyr::select(dplyr::all_of(keep))
 
     # Split data into marker intensities, metadata and co-ordinates
-    counts <- dt[, ordered_markers] * 65535
+    markers <- panel$Target
+    meta <- setdiff(colnames(dt), markers)
+
+    counts <- dt[, markers]
     metadata <- dt[, setdiff(meta, c("X","Y"))]
     coords <- dt[, c("X","Y")]
 
     # Create table of data for each marker
     rownames(panel) <- panel$Target
     markerData <- dplyr::select(panel, -Target)
-    markerData <- markerData[ordered_markers, ]
+    markerData <- markerData[markers, ]
 
     # Create spatial object
     spe <- SpatialExperiment::SpatialExperiment(
@@ -141,21 +73,6 @@ CreateSpatialExperiment <- function(to_remove,
     spe$Image <- as.factor(spe$Image)
     spe$ImageID <- as.factor(spe$ImageID)
     spe$DonorID <- as.factor(spe$DonorID)
-
-    # Add a universal CellID column
-    SummarizedExperiment::colData(spe)$uCellID <- 1:length(spe$CellID)
-    uIDKey <- as.data.frame(SummarizedExperiment::colData(spe))
-    uIDKey <- uIDKey %>%
-        dplyr::group_by(Image) %>%
-        dplyr::filter(dplyr::row_number() == 1) %>%
-        dplyr::select(Image, ImShort, ImageID, uCellID)
-
-    # Write a CSV matching ImageIDs with uCellIDs
-    utils::write.csv(
-        uIDKey,
-        file.path(analysis_path, "Image_uCellID_key.csv"),
-        row.names = FALSE
-    )
 
     ### Assign colour palettes
     color_vectors <- list()
@@ -194,7 +111,7 @@ CreateSpatialExperiment <- function(to_remove,
 #'
 #' @param object A `SpatialExperiment` object.
 #' @return The input object with arcsinh-transformed data added as a new `"data"`
-#'   assay, and z-standardised data added as a new `"standardised"` assay.
+#'   assay, and z-standardised data added as a new `"scale.data"` assay.
 #' @export
 #' @importFrom SummarizedExperiment assay colData
 #' @examples
@@ -231,7 +148,7 @@ NormaliseData <- function(object) {
     }
 
     # Assign the standardised data back to the assay
-    SummarizedExperiment::assay(object, "standardised") <- base_matrix
+    SummarizedExperiment::assay(object, "scale.data") <- base_matrix
 
     return(object)
 }
