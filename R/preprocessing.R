@@ -1,11 +1,9 @@
 #' Create a SpatialExperiment Object
 #'
 #' This function creates a `SpatialExperiment` object by loading, filtering,
-#' and processing image, cell, and panel data. It supports the removal of
-#' specified metals, generates spatial coordinates, and assigns colour palettes
-#' for visualizations.
+#' and processing image, cell, and panel data. It generates spatial coordinates,
+#' and assigns colour palettes for visualizations.
 #'
-#' @param to_remove A character vector specifying metal tags to remove from the panel.
 #' @param analysis_path A character string indicating the path to the analysis folder.
 #'   Default is "analysis".
 #' @param raw_path A character string indicating the path to the raw data folder.
@@ -22,13 +20,10 @@
 #' @importFrom RColorBrewer brewer.pal
 #' @examples
 #' spe <- CreateSpatialExperiment(
-#'   to_remove = c("Cd113", "Pd105"),
 #'   analysis_path = "path/to/analysis",
 #'   raw_path = "path/to/raw"
 #' )
-CreateSpatialExperiment <- function(to_remove,
-                                    analysis_path = "analysis",
-                                    raw_path = "raw") {
+CreateSpatialExperiment <- function(analysis_path = "analysis", raw_path = "raw") {
     # Load CSVs
     cells <- utils::read.csv(
         file.path(analysis_path, "4_pyprofiler_output", "cell.csv")
