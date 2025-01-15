@@ -22,10 +22,7 @@
 ExportFCS <- function(object,
                       extra_metadata = NULL,
                       assay_name = "scale.data",
-                      export_path = "5_R_analysis/FlowJo") {
-
-    # Read image data
-    image <- utils::read.csv("image.csv")
+                      export_path = "analysis/5_R_analysis/FlowJo") {
 
     # Extract metadata
     metadata_list <- c("ImageID", "CellID", "Area", "ImShort")
@@ -35,6 +32,8 @@ ExportFCS <- function(object,
 
     metadata <- as.data.frame(SummarizedExperiment::colData(object)) %>%
         dplyr::select(any_of(metadata_list))
+
+    # CHECK THAT EXTRA_METADATA IS NUMERIC
 
     # Extract assay data
     assayData <- as.data.frame(
@@ -49,7 +48,6 @@ ExportFCS <- function(object,
     )
     df$ImageID <- as.numeric(df$ImageID)
     df <- df %>%
-        dplyr::left_join(image, by = "ImageID") %>%
         dplyr::group_by(ImageID) %>%
         dplyr::mutate(Y = max(Y) - Y) %>% # CHECK IF IMAGE IS INVERTED
         dplyr::ungroup()
@@ -69,7 +67,9 @@ ExportFCS <- function(object,
         im_short <- unique_ImShort[i]
         subset_df <- df %>%
             dplyr::filter(ImShort == im_short) %>%
-            dplyr::select(dplyr::any_of(colnames(assayData)))
+            dplyr::select(dplyr::any_of(
+                setdiff(colnames(df), "ImShort")
+            ))
 
         # Convert to matrix and ensure numeric
         data_mat <- apply(as.matrix(subset_df), 2, as.numeric)
@@ -117,7 +117,7 @@ CreateMantisFolder <- function(object,
                                mask_suffix = "_CpSeg_mask.tif",
                                assay_name = "scale.data",
                                analysis_path = "analysis/3_segmentation",
-                               mantis_path = "5_R_analysis/MantisProject") {
+                               mantis_path = "analysis/5_R_analysis/MantisProject") {
 
     # Create 'MantisProject' folder
     dir.create(mantis_path, showWarnings = FALSE)
@@ -211,7 +211,7 @@ CreateMantisFolder <- function(object,
 #' @importFrom SummarizedExperiment colData
 #' @examples
 #' spe <- ImportFlowJoData(object = spe, FlowJo_path = "FlowJo")
-ImportFlowJoData <- function(object, FlowJo_path = "5_R_analysis/FlowJo") {
+ImportFlowJoData <- function(object, FlowJo_path = "analysis/5_R_analysis/FlowJo") {
     # List exported CSVs from FlowJo
     csvs <- list.files(
         path = file.path(FlowJo_path, "Export"),
