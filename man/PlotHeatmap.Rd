@@ -9,7 +9,7 @@ PlotHeatmap(
   prefix,
   annot_by,
   genes = rownames(object),
-  assay_name = "standardised",
+  assay_name = "scale.data",
   disp_min = NULL,
   disp_max = NULL,
   seed = 123,
@@ -29,7 +29,7 @@ PlotHeatmap(
 Default is all row names.}
 
 \item{assay_name}{A character string specifying the assay to use for plotting.
-Default is `"standardised"`.}
+Default is `"scale.data"`.}
 
 \item{disp_min}{Minimum value for display. Values below will be clipped. Default is `NULL`.}
 

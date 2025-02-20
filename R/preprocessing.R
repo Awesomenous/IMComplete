@@ -18,6 +18,8 @@
 #' @importFrom S4Vectors metadata
 #' @importFrom SummarizedExperiment colData assay
 #' @importFrom RColorBrewer brewer.pal
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @examples
 #' spe <- CreateSpatialExperiment(
 #'   analysis_path = "path/to/analysis",
@@ -33,17 +35,17 @@ CreateSpatialExperiment <- function(analysis_path = "analysis", raw_path = "raw"
 
     # Filter rows and columns
     panel <- panel %>%
-        dplyr::filter(Full == 1)
+        dplyr::filter(.data$Full == 1)
 
     # Join image data with cell data
     dt <- dplyr::left_join(
         cells,
         image,
-        by = dplyr::join_by(Image)
+        by = dplyr::join_by("Image")
     )
 
     # Split data into marker intensities, metadata and co-ordinates
-    markers <- panel$Target
+    markers <- panel[["Target"]]
     meta <- setdiff(colnames(dt), markers)
 
     counts <- dt[, markers]
@@ -51,8 +53,8 @@ CreateSpatialExperiment <- function(analysis_path = "analysis", raw_path = "raw"
     coords <- dt[, c("X","Y")]
 
     # Create table of data for each marker
-    rownames(panel) <- panel$Target
-    markerData <- dplyr::select(panel, -Target)
+    rownames(panel) <- panel[["Target"]]
+    markerData <- dplyr::select(panel, -"Target")
     markerData <- markerData[markers, ]
 
     # Create spatial object
@@ -61,39 +63,39 @@ CreateSpatialExperiment <- function(analysis_path = "analysis", raw_path = "raw"
         colData = metadata,
         rowData = markerData,
         spatialCoords = as.matrix(coords),
-        sample_id = as.character(metadata$ImageID)
+        sample_id = as.character(metadata[["ImageID"]])
     )
 
     # Change variables to 'factor' type
-    spe$Image <- as.factor(spe$Image)
-    spe$ImageID <- as.factor(spe$ImageID)
-    spe$DonorID <- as.factor(spe$DonorID)
+    spe[["Image"]] <- as.factor(spe[["Image"]])
+    spe[["ImageID"]] <- as.factor(spe[["ImageID"]])
+    spe[["DonorID"]] <- as.factor(spe[["DonorID"]])
 
     ### Assign colour palettes
-    color_vectors <- list()
+    colour_vectors <- list()
     # DonorID
-    donor_ids <- unique(spe$DonorID)
+    donor_ids <- unique(spe[["DonorID"]])
     # Create a color vector that repeats if there are more than 12 unique DonorIDs
     donor_colors <- RColorBrewer::brewer.pal(12, name = "Paired")[
         as.numeric(donor_ids) %% 12 + 1
     ]
     # Set the names of the colors to match the unique DonorIDs
-    DonorID <- setNames(donor_colors, donor_ids)
-    color_vectors$DonorID <- DonorID
+    DonorID <- stats::setNames(donor_colors, donor_ids)
+    colour_vectors[["DonorID"]] <- DonorID
 
     # ImageID
-    image_ids <- unique(spe$ImageID)
+    image_ids <- unique(spe[["ImageID"]])
     # Create a color vector that repeats if there are more than 12 unique ImageIDs
     image_colors <- RColorBrewer::brewer.pal(12, name = "Paired")[
         as.numeric(image_ids) %% 12 + 1
     ]
     # Set the names of the colors to match the unique ImageIDs
     ImageID <- stats::setNames(image_colors, image_ids)
-    color_vectors$ImageID <- ImageID
+    colour_vectors[["ImageID"]] <- ImageID
 
     # Merge colour palettes back into 'spe' object
-    S4Vectors::metadata(spe)$color_vectors <- color_vectors
-    colnames(spe) <- paste0(spe$ImageID, "_", spe$CellID)
+    S4Vectors::metadata(spe)[["colour_vectors"]] <- colour_vectors
+    colnames(spe) <- paste0(spe[["ImageID"]], "_", spe[["CellID"]])
 
     return(spe)
 }

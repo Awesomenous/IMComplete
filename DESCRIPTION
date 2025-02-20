@@ -13,29 +13,31 @@ Description: IMComplete provides a comprehensive and automated pipeline for
 License: GPL (>=2)
 Encoding: UTF-8
 LazyData: true
-Imports:
-    RColorBrewer,
-    Rphenograph,
-    S4Vectors,
-    Seurat,
-    SingleCellExperiment,
-    SpatialExperiment,
-    SummarizedExperiment,
+Imports: 
+    BiocSingular,
     dittoSeq,
     dplyr,
     flowCore,
     ggplot2,
     ggridges,
+    grDevices,
+    harmony,
     igraph,
     ijtiff,
+    magrittr,
+    methods,
     patchwork,
+    RColorBrewer,
     rlang,
+    Rphenograph,
+    S4Vectors,
     scater,
     scuttle,
+    SingleCellExperiment,
+    SpatialExperiment,
     stats,
     stringr,
+    SummarizedExperiment,
     tiff,
-    utils,
-    magrittr,
-    methods
+    utils
 RoxygenNote: 7.3.2

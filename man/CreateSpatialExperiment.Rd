@@ -4,15 +4,9 @@
 \alias{CreateSpatialExperiment}
 \title{Create a SpatialExperiment Object}
 \usage{
-CreateSpatialExperiment(
-  to_remove,
-  analysis_path = "analysis",
-  raw_path = "raw"
-)
+CreateSpatialExperiment(analysis_path = "analysis", raw_path = "raw")
 }
 \arguments{
-\item{to_remove}{A character vector specifying metal tags to remove from the panel.}
-
 \item{analysis_path}{A character string indicating the path to the analysis folder.
 Default is "analysis".}
 
@@ -25,13 +19,11 @@ A `SpatialExperiment` object with processed assays, metadata, and
 }
 \description{
 This function creates a `SpatialExperiment` object by loading, filtering,
-and processing image, cell, and panel data. It supports the removal of
-specified metals, generates spatial coordinates, and assigns colour palettes
-for visualizations.
+and processing image, cell, and panel data. It generates spatial coordinates,
+and assigns colour palettes for visualizations.
 }
 \examples{
 spe <- CreateSpatialExperiment(
-  to_remove = c("Cd113", "Pd105"),
   analysis_path = "path/to/analysis",
   raw_path = "path/to/raw"
 )

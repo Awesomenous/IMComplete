@@ -47,5 +47,5 @@ Creates violin plots for specified features from a `SpatialExperiment` object.
 Allows customization of aesthetics and jitter options.
 }
 \examples{
-PlotViolin(object = spe, assay_name = "standardised", features = c("Gene1", "Gene2"))
+PlotViolin(object = spe, assay_name = "scale.data", features = c("Gene1", "Gene2"))
 }

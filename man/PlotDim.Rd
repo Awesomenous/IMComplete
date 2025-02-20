@@ -8,7 +8,7 @@ PlotDim(
   object,
   reduction,
   prefixes = NULL,
-  assay_name = "standardised",
+  assay_name = "scale.data",
   var = NULL,
   subsample = NULL,
   dim = c(1, 2),
@@ -23,7 +23,7 @@ PlotDim(
 
 \item{prefixes}{An optional vector of prefixes to filter clusters. Default is `NULL`.}
 
-\item{assay_name}{A character string specifying the assay to use. Default is `"standardised"`.}
+\item{assay_name}{A character string specifying the assay to use. Default is `"scale.data"`.}
 
 \item{var}{A column in `colData` to color points by. Default is `NULL`.}
 

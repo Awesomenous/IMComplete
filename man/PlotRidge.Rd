@@ -34,5 +34,5 @@ A `patchwork`ed `ggplot2` object.
 Creates ridge plots for specified features from a `SpatialExperiment` object.
 }
 \examples{
-PlotRidge(object = spe, assay_name = "standardised", features = c("Gene1", "Gene2"))
+PlotRidge(object = spe, assay_name = "scale.data", features = c("Gene1", "Gene2"))
 }

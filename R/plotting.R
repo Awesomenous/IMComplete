@@ -20,8 +20,10 @@
 #' @importFrom dplyr filter
 #' @importFrom SummarizedExperiment colData assay
 #' @importFrom patchwork wrap_plots
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @examples
-#' PlotViolin(object = spe, assay_name = "standardised", features = c("Gene1", "Gene2"))
+#' PlotViolin(object = spe, assay_name = "scale.data", features = c("Gene1", "Gene2"))
 PlotViolin <- function(object,
                        assay_name,
                        features,
@@ -148,8 +150,10 @@ PlotViolin <- function(object,
 #' @importFrom SummarizedExperiment colData assay
 #' @importFrom dplyr filter
 #' @importFrom patchwork wrap_plots
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @examples
-#' PlotRidge(object = spe, assay_name = "standardised", features = c("Gene1", "Gene2"))
+#' PlotRidge(object = spe, assay_name = "scale.data", features = c("Gene1", "Gene2"))
 PlotRidge <- function(object,
                       assay_name,
                       features,
@@ -234,7 +238,7 @@ PlotRidge <- function(object,
 #' @param genes A character vector of gene names to include in the heatmap.
 #'   Default is all row names.
 #' @param assay_name A character string specifying the assay to use for plotting.
-#'   Default is `"standardised"`.
+#'   Default is `"scale.data"`.
 #' @param disp_min Minimum value for display. Values below will be clipped. Default is `NULL`.
 #' @param disp_max Maximum value for display. Values above will be clipped. Default is `NULL`.
 #' @param seed A numeric seed for reproducibility. Default is `123`.
@@ -247,13 +251,15 @@ PlotRidge <- function(object,
 #' @importFrom S4Vectors metadata
 #' @importFrom scuttle aggregateAcrossCells
 #' @importFrom dittoSeq dittoHeatmap dittoColors
+#' @importFrom magrittr %>%
+#' @importFrom methods as
 #' @examples
 #' PlotHeatmap(object = spe, prefix = "Cluster", annot_by = "DonorID", genes = c("Gene1", "Gene2"))
 PlotHeatmap <- function(object,
                         prefix,
                         annot_by,
                         genes = rownames(object),
-                        assay_name = "standardised",
+                        assay_name = "scale.data",
                         disp_min = NULL,
                         disp_max = NULL,
                         seed = 123,
@@ -364,7 +370,7 @@ PlotHeatmap <- function(object,
 #' @param object A `SpatialExperiment` object.
 #' @param reduction A character string, either `"UMAP"` or `"PCA"`.
 #' @param prefixes An optional vector of prefixes to filter clusters. Default is `NULL`.
-#' @param assay_name A character string specifying the assay to use. Default is `"standardised"`.
+#' @param assay_name A character string specifying the assay to use. Default is `"scale.data"`.
 #' @param var A column in `colData` to color points by. Default is `NULL`.
 #' @param subsample An optional integer specifying the number of cells to subsample. Default is `NULL`.
 #' @param dim A numeric vector specifying which dimensions to plot. Default is `c(1, 2)`.
@@ -376,12 +382,13 @@ PlotHeatmap <- function(object,
 #' @importFrom SingleCellExperiment reducedDim reducedDimNames
 #' @importFrom dittoSeq dittoDimPlot
 #' @importFrom ggplot2 labs theme element_blank
+#' @importFrom magrittr %>%
 #' @examples
 #' PlotDim(object = spe, reduction = "UMAP", var = "Cluster")
 PlotDim <- function(object,
                     reduction,
                     prefixes = NULL,
-                    assay_name = "standardised",
+                    assay_name = "scale.data",
                     var = NULL,
                     subsample = NULL,
                     dim = c(1, 2),
@@ -477,8 +484,8 @@ PlotDim <- function(object,
 #' @param object A `SpatialExperiment` object.
 #' @param feature1 A character string specifying the first feature (x-axis).
 #' @param feature2 A character string specifying the second feature (y-axis).
-#' @param assay_name1 A character string specifying the assay for `feature1`. Default is `"standardised"`.
-#' @param assay_name2 A character string specifying the assay for `feature2`. Default is `"standardised"`.
+#' @param assay_name1 A character string specifying the assay for `feature1`. Default is `"scale.data"`.
+#' @param assay_name2 A character string specifying the assay for `feature2`. Default is `"scale.data"`.
 #' @param colour_by A column in `colData` to color points by. Default is `NULL`.
 #' @param remove_na Logical, whether to remove cells with `NA` in `colour_by`. Default is `TRUE`.
 #' @return A `ggplot2` object.
@@ -486,13 +493,14 @@ PlotDim <- function(object,
 #' @importFrom SummarizedExperiment colData assay
 #' @importFrom dittoSeq dittoScatterPlot
 #' @importFrom ggplot2 theme element_blank
+#' @importFrom magrittr %>%
 #' @examples
 #' PlotScatter(object = spe, feature1 = "Gene1", feature2 = "Gene2", colour_by = "Cluster")
 PlotScatter <- function(object,
                         feature1,
                         feature2,
-                        assay_name1 = "standardised",
-                        assay_name2 = "standardised",
+                        assay_name1 = "scale.data",
+                        assay_name2 = "scale.data",
                         colour_by = NULL,
                         remove_na = TRUE) {
 
@@ -517,7 +525,11 @@ PlotScatter <- function(object,
         assay.y = assay_name2,
         color.var = colour_by
     ) +
-        ggplot2::theme(plot.title = ggplot2::element_blank())
+        ggplot2::theme(
+            plot.title = ggplot2::element_blank(),
+            panel.grid.major = ggplot2::element_blank(),
+            panel.grid.minor = ggplot2::element_blank()
+        )
 
     return(plot)
 }

@@ -4,20 +4,32 @@
 \alias{BatchCorrect}
 \title{Batch Correction for SpatialExperiment Object}
 \usage{
-BatchCorrect(object, col = "DonorID", markers = rownames(object), k = 20)
+BatchCorrect(
+  object,
+  ncomponents,
+  col = "DonorID",
+  markers = rownames(object),
+  assay_name = "data",
+  seed = 123
+)
 }
 \arguments{
 \item{object}{A `SpatialExperiment` object
 containing the data to be batch-corrected.}
 
-\item{col}{A character string specifying the column in `colData` used to
-split the data into batches. Default is `"DonorID"`.}
+\item{ncomponents}{An integer specifying the number of principal components (PCs)
+to compute for batch correction.}
 
-\item{markers}{A character vector of marker names to use for batch correction.
+\item{col}{A character string specifying the column in `colData` used to
+define batch labels. Default is `"DonorID"`.}
+
+\item{markers}{A character vector of marker names to use for PCA.
 Default is all markers (`rownames(object)`).}
 
-\item{k}{An integer specifying the number of nearest neighbors to use when
-finding integration anchors. Default is 20.}
+\item{assay_name}{A character string specifying the assay to use for PCA.
+Default is `"data"`.}
+
+\item{seed}{An integer seed for reproducibility. Default is 123.}
 }
 \value{
 The input object with a new reduced dimension named `"batch_corrected"`,
@@ -25,16 +37,16 @@ The input object with a new reduced dimension named `"batch_corrected"`,
 }
 \description{
 This function performs batch correction on a `SpatialExperiment` object
-using the `Seurat` package. It splits the data by a specified column
-(e.g., `DonorID`), performs PCA on each batch, finds integration anchors,
-and integrates the data across batches.
+using `scater` for PCA and `harmony` for batch correction. It splits the
+data by a specified column (e.g., `DonorID`), runs PCA on selected markers,
+and applies `harmony` to integrate data across batches.
 }
 \examples{
 # Perform batch correction using DonorID and specific markers
 spe <- BatchCorrect(
   object = spe,
+  ncomponents = 30,
   col = "DonorID",
-  markers = c("Marker1", "Marker2"),
-  k = 30
+  markers = c("Marker1", "Marker2")
 )
 }

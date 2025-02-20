@@ -10,7 +10,7 @@ ClusterCells(
   prefix,
   markers = rownames(object),
   filter_condition = NULL,
-  assay_name = "standardised",
+  assay_name = "scale.data",
   seed = 123,
   batch_corrected = FALSE
 )
@@ -30,7 +30,7 @@ is all markers (`rownames(object)`).}
 clustering, provided as a tidy evaluation formula (e.g., `celltype == "T cell"`).}
 
 \item{assay_name}{A character string specifying the assay to use for clustering if
-`batch_corrected = FALSE`. Default is `"standardised"`.}
+`batch_corrected = FALSE`. Default is `"scale.data"`.}
 
 \item{seed}{An integer seed for reproducibility. Default is 123.}
 

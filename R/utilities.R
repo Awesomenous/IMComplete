@@ -4,12 +4,12 @@
 #' object to individual FCS files, grouped by the `ImShort` column.
 #'
 #' @param object A `SpatialExperiment` object.
+#' @param extra_metadata A vector of character strings specifying additional metadata columns to include in the object.
+#'  Default is `NULL` (no additional columns).
 #' @param assay_name A character string specifying the assay to export. Default
 #'   is `"scale.data"`.
 #' @param export_path A character string specifying the directory to save the
 #'   exported FCS files. Default is `"FlowJo"`.
-#' @param analysis_path A character string specifying the path to analysis data.
-#'   Default is `"analysis"`.
 #' @return None. FCS files are written to the specified directory.
 #' @export
 #' @importFrom utils read.csv txtProgressBar setTxtProgressBar
@@ -17,8 +17,10 @@
 #' @importFrom SummarizedExperiment assay colData
 #' @importFrom SpatialExperiment spatialCoords
 #' @importFrom flowCore flowFrame write.FCS
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @examples
-#' ExportFCS(object = spe, assay_name = "standardised", export_path = "FlowJo")
+#' ExportFCS(object = spe, assay_name = "scale.data", export_path = "FlowJo")
 ExportFCS <- function(object,
                       extra_metadata = NULL,
                       assay_name = "scale.data",
@@ -27,7 +29,7 @@ ExportFCS <- function(object,
     # Extract metadata
     metadata_list <- c("ImageID", "CellID", "Area", "ImShort")
     if (!is.null(extra_metadata)) {
-        metadata_list <- unique(c(metadata_list, extra_metadata[extra_metadata %in% colnames(SummarizedExperiment::colData(object))])) # COME BACK HERE
+        metadata_list <- unique(c(metadata_list, extra_metadata[extra_metadata %in% colnames(SummarizedExperiment::colData(object))])) # COME BACK HERE AND CHECK IF CORRECT
     }
 
     metadata <- as.data.frame(SummarizedExperiment::colData(object)) %>%
@@ -46,10 +48,10 @@ ExportFCS <- function(object,
         as.data.frame(SpatialExperiment::spatialCoords(object)),
         assayData
     )
-    df$ImageID <- as.numeric(df$ImageID)
+    df$ImageID <- as.numeric(df[["ImageID"]])
     df <- df %>%
-        dplyr::group_by(ImageID) %>%
-        dplyr::mutate(Y = max(Y) - Y) %>% # CHECK IF IMAGE IS INVERTED
+        dplyr::group_by(.data$ImageID) %>%
+        dplyr::mutate(Y = max(.data$Y) - .data$Y) %>% # CHECK IF IMAGE IS INVERTED
         dplyr::ungroup()
 
     # Ensure export directory exists
@@ -57,7 +59,7 @@ ExportFCS <- function(object,
     dir.create(export_dir, showWarnings = FALSE, recursive = TRUE)
 
     # Export separate FCS files for each unique ImShort value
-    unique_ImShort <- unique(df$ImShort)
+    unique_ImShort <- unique(df[["ImShort"]])
     n_files <- length(unique_ImShort)
 
     # Initialize progress bar
@@ -66,7 +68,7 @@ ExportFCS <- function(object,
     for (i in seq_along(unique_ImShort)) {
         im_short <- unique_ImShort[i]
         subset_df <- df %>%
-            dplyr::filter(ImShort == im_short) %>%
+            dplyr::filter(.data$ImShort == im_short) %>%
             dplyr::select(dplyr::any_of(
                 setdiff(colnames(df), "ImShort")
             ))
@@ -96,9 +98,12 @@ ExportFCS <- function(object,
 #' TIFF images, segmentation masks, and metadata.
 #'
 #' @param object A `SpatialExperiment` object.
+#' @param img_suffix A character string specifying the suffix added to the end of the full image names.
+#'  Default is `"_full.tiff"`.
+#' @param mask_suffix A character string specifying the suffix added to the end of the mask image names.
+#'  Default is `"_CpSeg_mask.tif"`.
 #' @param assay_name A character string specifying the assay to use for TIFF generation.
 #'   Default is `"scale.data"`.
-#' @param raw_path A character string specifying the path to raw data. Default is `"raw"`.
 #' @param analysis_path A character string specifying the path to analysis data.
 #'   Default is `"analysis"`.
 #' @param mantis_path A character string specifying the path for the Mantis project.
@@ -110,6 +115,8 @@ ExportFCS <- function(object,
 #' @importFrom ijtiff write_tif
 #' @importFrom dplyr filter distinct pull select bind_rows
 #' @importFrom tiff readTIFF
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @examples
 #' CreateMantisFolder(object = spe, raw_path = "raw", analysis_path = "analysis")
 CreateMantisFolder <- function(object,
@@ -124,12 +131,12 @@ CreateMantisFolder <- function(object,
 
     # Load image names
     image_df <- utils::read.csv("image.csv")
-    image_list <- image_df$Image
-    imshort_list <- image_df$ImShort
+    image_list <- image_df[["Image"]]
+    imshort_list <- image_df[["ImShort"]]
 
     # Obtain panel
     panel <- utils::read.csv("panel.csv") %>%
-        dplyr::filter(Full == 1)
+        dplyr::filter(.data$Full == 1)
 
     # Extract the full assay data (markers) and transpose it
     markers <- rownames(object)
@@ -209,6 +216,8 @@ CreateMantisFolder <- function(object,
 #' @importFrom utils read.csv
 #' @importFrom dplyr select bind_rows left_join
 #' @importFrom SummarizedExperiment colData
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @examples
 #' spe <- ImportFlowJoData(object = spe, FlowJo_path = "FlowJo")
 ImportFlowJoData <- function(object, FlowJo_path = "analysis/5_R_analysis/FlowJo") {
@@ -223,40 +232,40 @@ ImportFlowJoData <- function(object, FlowJo_path = "analysis/5_R_analysis/FlowJo
     add_celltype <- function(x) {
         df <- utils::read.csv(x, header = TRUE)
         celltype <- sub("\\.csv$", "", basename(x))
-        df$FlowJo_celltype <- rep(celltype, nrow(df))
+        df[["FlowJo_celltype"]] <- rep(celltype, nrow(df))
         return(df)
     }
 
     # Combine CSVs from FlowJo
     csvs <- lapply(csvs, add_celltype)
     flowjo_df <- dplyr::bind_rows(csvs) %>%
-        dplyr::select(ImageID, CellID, FlowJo_celltype) %>%
-        dplyr::mutate(uCellID = paste0(ImageID, "_", CellID))
-    flowjo_df$FlowJo_celltype <- as.factor(flowjo_df$FlowJo_celltype)
+        dplyr::select("ImageID", "CellID", "FlowJo_celltype") %>%
+        dplyr::mutate(uCellID = paste0(.data$ImageID, "_", .data$CellID))
+    flowjo_df[["FlowJo_celltype"]] <- as.factor(flowjo_df[["FlowJo_celltype"]])
 
     # Extract existing metadata
     metadata <- as.data.frame(SummarizedExperiment::colData(object)) %>%
-        dplyr::mutate(uCellID = paste0(ImageID, "_", CellID))
+        dplyr::mutate(uCellID = paste0(.data$ImageID, "_", .data$CellID))
 
     # Remove old FlowJo annotations if they exist
     if ("FlowJo_celltype" %in% names(SummarizedExperiment::colData(object))) {
         metadata <- metadata %>%
-            dplyr::select(-FlowJo_celltype)
+            dplyr::select(-"FlowJo_celltype")
     }
 
     # Merge FlowJo data with existing metadata
     flowjo_df <- dplyr::left_join(metadata, flowjo_df, by = "uCellID")
 
     # Remove duplicates by keeping the first label for each cell
-    num_duplicates <- sum(duplicated(flowjo_df$uCellID))
+    num_duplicates <- sum(duplicated(flowjo_df[["uCellID"]]))
     message(paste(
         num_duplicates, "cells found in multiple gates. First instance chosen."
     ))
-    flowjo_df <- flowjo_df[!duplicated(flowjo_df$uCellID), ]
+    flowjo_df <- flowjo_df[!duplicated(flowjo_df[["uCellID"]]), ]
 
     # Add FlowJo annotations to the object
-    SummarizedExperiment::colData(object)$FlowJo_celltype <-
-        flowjo_df$FlowJo_celltype
+    SummarizedExperiment::colData(object)[["FlowJo_celltype"]] <-
+        flowjo_df[["FlowJo_celltype"]]
 
     return(object)
 }
@@ -275,6 +284,7 @@ ImportFlowJoData <- function(object, FlowJo_path = "analysis/5_R_analysis/FlowJo
 #' @importFrom dplyr select any_of
 #' @importFrom stats na.omit
 #' @importFrom SummarizedExperiment colData
+#' @importFrom magrittr %>%
 #' @examples
 #' ExportToMantis(object = spe, column = "Cluster", file_path = "mantis_export.csv")
 ExportToMantis <- function(object, column, file_path) {

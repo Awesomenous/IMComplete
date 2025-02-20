@@ -11,7 +11,7 @@ NormaliseData(object)
 }
 \value{
 The input object with arcsinh-transformed data added as a new `"data"`
-  assay, and z-standardised data added as a new `"standardised"` assay.
+  assay, and z-standardised data added as a new `"scale.data"` assay.
 }
 \description{
 This function applies an arcsinh-transformation to the raw `"counts"` assay,

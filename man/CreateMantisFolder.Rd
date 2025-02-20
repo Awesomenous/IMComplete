@@ -6,19 +6,24 @@
 \usage{
 CreateMantisFolder(
   object,
-  assay_name = "standardised",
-  raw_path = "raw",
-  analysis_path = "analysis",
-  mantis_path = "MantisProject"
+  img_suffix = "_full.tiff",
+  mask_suffix = "_CpSeg_mask.tif",
+  assay_name = "scale.data",
+  analysis_path = "analysis/3_segmentation",
+  mantis_path = "analysis/5_R_analysis/MantisProject"
 )
 }
 \arguments{
 \item{object}{A `SpatialExperiment` object.}
 
-\item{assay_name}{A character string specifying the assay to use for TIFF generation.
-Default is `"standardised"`.}
+\item{img_suffix}{A character string specifying the suffix added to the end of the full image names.
+Default is `"_full.tiff"`.}
 
-\item{raw_path}{A character string specifying the path to raw data. Default is `"raw"`.}
+\item{mask_suffix}{A character string specifying the suffix added to the end of the mask image names.
+Default is `"_CpSeg_mask.tif"`.}
+
+\item{assay_name}{A character string specifying the assay to use for TIFF generation.
+Default is `"scale.data"`.}
 
 \item{analysis_path}{A character string specifying the path to analysis data.
 Default is `"analysis"`.}

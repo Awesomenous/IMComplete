@@ -12,7 +12,7 @@
 #' @param filter_condition An optional condition for filtering cells prior to
 #'   clustering, provided as a tidy evaluation formula (e.g., `celltype == "T cell"`).
 #' @param assay_name A character string specifying the assay to use for clustering if
-#'   `batch_corrected = FALSE`. Default is `"standardised"`.
+#'   `batch_corrected = FALSE`. Default is `"scale.data"`.
 #' @param seed An integer seed for reproducibility. Default is 123.
 #' @param batch_corrected A logical value. If `TRUE`, the `"batch_corrected"`
 #'   reduced dimension is used instead of marker expression. Default is `FALSE`.
@@ -27,6 +27,8 @@
 #' @importFrom igraph membership
 #' @importFrom Rphenograph Rphenograph
 #' @importFrom rlang enquo
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @examples
 #' # Filter for T cells, perform clustering with 30 nearest neighbours, and name
 #' # resulting clusters with the "T cell" prefix
@@ -51,7 +53,7 @@ ClusterCells <- function(object,
                          prefix,
                          markers = rownames(object),
                          filter_condition = NULL,
-                         assay_name = "standardised",
+                         assay_name = "scale.data",
                          seed = 123,
                          batch_corrected = FALSE) {
 
@@ -63,8 +65,6 @@ ClusterCells <- function(object,
 
     # Filter object based on the filter_condition
     if (!missing(filter_condition)) {
-        col_data <- as.data.frame(SummarizedExperiment::colData(object))
-
         # Filter rows based on the condition within colData
         condition <- rlang::enquo(filter_condition)
         filtered_rows <- col_data %>%
@@ -74,10 +74,8 @@ ClusterCells <- function(object,
             stop("No rows match the filter condition.")
         }
 
-        filtered_ids <- filtered_rows$uCellID
-
         # Subset the object based on the filtered rows
-        object <- object[, object$uCellID %in% filtered_ids]
+        object <- object[, colnames(object) %in% rownames(filtered_rows)]
     }
 
     # Perform clustering
@@ -98,36 +96,36 @@ ClusterCells <- function(object,
     clusters <- factor(igraph::membership(out[[2]]))
     cluster_labels <- paste0(prefix, "_", clusters)
 
-    # Add cluster labels to the subset
-    SummarizedExperiment::colData(object)$Cluster <- as.factor(cluster_labels)
-
     # Prepare the new cluster data for merging
-    new_clusters <- object %>%
-        SummarizedExperiment::colData() %>%
-        as.data.frame() %>%
-        dplyr::select(uCellID, Cluster)
+    new_clusters <- data.frame(
+        uCellID = colnames(object),
+        Cluster = as.factor(cluster_labels)
+    )
 
     # Merge new clusters into the original object
-    col_data <- as.data.frame(SummarizedExperiment::colData(object_ori))
+    col_data_ori <- as.data.frame(SummarizedExperiment::colData(object_ori))
+    col_data_ori$uCellID <- rownames(col_data_ori)
 
-    if ("Cluster" %in% colnames(col_data)) {
+    if ("Cluster" %in% colnames(col_data_ori)) {
         # Update existing Cluster column
-        col_data <- col_data %>%
+        col_data_ori <- col_data_ori %>%
             dplyr::left_join(
                 new_clusters, by = "uCellID", suffix = c("_old", "_new")
             ) %>%
             dplyr::mutate(
-                Cluster = dplyr::coalesce(Cluster_new, Cluster_old)
+                Cluster = dplyr::coalesce(.data$Cluster_new, .data$Cluster_old)
             ) %>%
-            dplyr::select(-Cluster_old, -Cluster_new)
+            dplyr::select(-"Cluster_old", -"Cluster_new")
     } else {
         # Add new Cluster column
-        col_data <- col_data %>%
+        col_data_ori <- col_data_ori %>%
             dplyr::left_join(new_clusters, by = "uCellID")
     }
 
     # Update colData in the original object
-    SummarizedExperiment::colData(object_ori) <- S4Vectors::DataFrame(col_data)
+    SummarizedExperiment::colData(object_ori) <- col_data_ori %>%
+        dplyr::select(-"uCellID") %>%
+        S4Vectors::DataFrame()
 
     # Return the updated object
     return(object_ori)
@@ -145,6 +143,8 @@ ClusterCells <- function(object,
 #' @export
 #' @importFrom SummarizedExperiment colData
 #' @importFrom dplyr recode mutate
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @examples
 #' # Annotate clusters
 #' label_map <- c(
@@ -163,21 +163,21 @@ AnnotateClusters <- function(object, label_mapping) {
     # Extract and modify metadata
     metadata <- SummarizedExperiment::colData(object) %>%
         as.data.frame()
-    metadata$LabelledCluster <- recoded
+    metadata[["LabelledCluster"]] <- recoded
 
     # Replace matching labels with NA
     metadata <- metadata %>%
         dplyr::mutate(
             LabelledCluster = dplyr::if_else(
-                as.character(LabelledCluster) == as.character(Cluster),
+                as.character(.data$LabelledCluster) == as.character(.data$Cluster),
                 NA_character_,
-                LabelledCluster
+                .data$LabelledCluster
             )
         )
 
     # Add the new LabelledCluster column back to the object
-    SummarizedExperiment::colData(object)$LabelledCluster <-
-        metadata$LabelledCluster
+    SummarizedExperiment::colData(object)[["LabelledCluster"]] <-
+        metadata[["LabelledCluster"]]
 
     return(object)
 }

@@ -4,7 +4,7 @@
 \alias{ImportFlowJoData}
 \title{Import Data from FlowJo CSV Files}
 \usage{
-ImportFlowJoData(object, FlowJo_path)
+ImportFlowJoData(object, FlowJo_path = "analysis/5_R_analysis/FlowJo")
 }
 \arguments{
 \item{object}{A `SpatialExperiment` object.}

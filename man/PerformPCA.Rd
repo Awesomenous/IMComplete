@@ -9,7 +9,7 @@ PerformPCA(
   ncomponents,
   prefixes = NULL,
   markers = rownames(object),
-  assay_name = "standardised",
+  assay_name = "scale.data",
   seed = 123,
   ...
 )
@@ -27,7 +27,7 @@ PCA. Default is `NULL` (all cells are used).}
 Default is all markers (`rownames(object)`).}
 
 \item{assay_name}{A character string specifying the assay to use for PCA.
-Default is `"standardised"`.}
+Default is `"scale.data"`.}
 
 \item{seed}{An integer seed for reproducibility. Default is 123.}
 

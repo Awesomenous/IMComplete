@@ -8,8 +8,8 @@ PlotScatter(
   object,
   feature1,
   feature2,
-  assay_name1 = "standardised",
-  assay_name2 = "standardised",
+  assay_name1 = "scale.data",
+  assay_name2 = "scale.data",
   colour_by = NULL,
   remove_na = TRUE
 )
@@ -21,9 +21,9 @@ PlotScatter(
 
 \item{feature2}{A character string specifying the second feature (y-axis).}
 
-\item{assay_name1}{A character string specifying the assay for `feature1`. Default is `"standardised"`.}
+\item{assay_name1}{A character string specifying the assay for `feature1`. Default is `"scale.data"`.}
 
-\item{assay_name2}{A character string specifying the assay for `feature2`. Default is `"standardised"`.}
+\item{assay_name2}{A character string specifying the assay for `feature2`. Default is `"scale.data"`.}
 
 \item{colour_by}{A column in `colData` to color points by. Default is `NULL`.}
 

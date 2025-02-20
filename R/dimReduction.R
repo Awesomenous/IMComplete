@@ -11,7 +11,7 @@
 #' @param markers A character vector of marker names to include in the PCA.
 #'   Default is all markers (`rownames(object)`).
 #' @param assay_name A character string specifying the assay to use for PCA.
-#'   Default is `"standardised"`.
+#'   Default is `"scale.data"`.
 #' @param seed An integer seed for reproducibility. Default is 123.
 #' @param ... Additional arguments passed to `scater::runPCA`.
 #' @return The input object with PCA results stored in reduced dimensions:
@@ -22,6 +22,7 @@
 #' @importFrom SingleCellExperiment reducedDim reducedDimNames
 #' @importFrom scater runPCA
 #' @importFrom S4Vectors metadata
+#' @importFrom BiocSingular ExactParam
 #' @examples
 #' # Perform PCA on all cells
 #' spe <- PerformPCA(object = spe, ncomponents = 10)
@@ -32,7 +33,7 @@ PerformPCA <- function(object,
                        ncomponents,
                        prefixes = NULL,
                        markers = rownames(object),
-                       assay_name = "standardised",
+                       assay_name = "scale.data",
                        seed = 123,
                        ...) {
     set.seed(seed)
@@ -49,6 +50,7 @@ PerformPCA <- function(object,
             ncomponents = ncomponents,
             subset_row = markers,
             exprs_values = assay_name,
+            BSPARAM = BiocSingular::ExactParam(),
             ...
         )
         SingleCellExperiment::reducedDim(object, "PCA_full") <-
@@ -99,7 +101,7 @@ PerformPCA <- function(object,
 #' @param markers A character vector of marker names to include in the UMAP.
 #'   Default is all markers (`rownames(object)`).
 #' @param assay_name A character string specifying the assay to use for UMAP.
-#'   Default is `"standardised"`.
+#'   Default is `"scale.data"`.
 #' @param seed An integer seed for reproducibility. Default is 123.
 #' @param batch_corrected A logical value. If `TRUE`, the `"batch_corrected"`
 #'   reduced dimension is used instead of the assay. Default is `FALSE`.
@@ -122,7 +124,7 @@ PerformPCA <- function(object,
 PerformUMAP <- function(object,
                         prefixes = NULL,
                         markers = rownames(object),
-                        assay_name = "standardised",
+                        assay_name = "scale.data",
                         seed = 123,
                         batch_corrected = FALSE,
                         ...) {
