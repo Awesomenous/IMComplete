@@ -9,7 +9,7 @@ Description: IMComplete provides a comprehensive and automated pipeline for
     visualisation, and annotation of IMC datasets, with functionalities for 
     batch correction, dimensionality reduction, clustering, and marker expression 
     analysis. The package is designed for both novice and advanced users, offering 
-    user-friendly defaults while allowing detailed customization.
+    user-friendly defaults while allowing detailed customisation.
 License: GPL (>=2)
 Encoding: UTF-8
 LazyData: true
