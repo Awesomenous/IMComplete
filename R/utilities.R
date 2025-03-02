@@ -316,3 +316,38 @@ ExportToMantis <- function(object, column, file_path) {
         row.names = FALSE
     )
 }
+
+#' Retrieve a Set of Markers for Analysis
+#'
+#' This function extracts a set of markers from panel.csv based on a specified column.
+#' The extracted markers can then be used as input for other functions in downstream analyses.
+#'
+#' @param colname A character string specifying the column in panel.csv to filter by.
+#'                Default is "Full".
+#' @return A character vector containing the names of the selected markers.
+#' @export
+#' @importFrom utils read.csv
+#' @importFrom dplyr filter
+#' @importFrom magrittr %>%
+#' @examples
+#' # Extract markers from the "Full" column
+#' markers <- UseMarkers(colname = "Full")
+#'
+#' # Extract markers based on a different column
+#' markers_subset <- UseMarkers(colname = "Subset")
+UseMarkers <- function(colname = "Full") {
+    # Load panel data
+    panel <- utils::read.csv("panel.csv")
+
+    # Filter panel data based on given 'colname'
+    panel <- panel %>%
+        dplyr::filter(.data[[colname]] == 1)
+
+    # Extract markers
+    markers <- panel[["Target"]]
+
+    # Return markers
+    return(markers)
+}
+
+
