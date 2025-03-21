@@ -123,7 +123,7 @@ CreateMantisFolder <- function(object,
                                img_suffix = "_full.tiff",
                                mask_suffix = "_CpSeg_mask.tif",
                                assay_name = "scale.data",
-                               analysis_path = "analysis/3_segmentation",
+                               analysis_path = "analysis",
                                mantis_path = "analysis/5_R_analysis/MantisProject") {
 
     # Create 'MantisProject' folder
@@ -157,7 +157,7 @@ CreateMantisFolder <- function(object,
         # Read TIFF and CSV associated with the current image
         cur_tiff <- suppressWarnings(
             tiff::readTIFF(
-                file.path(analysis_path, "3a_fullstack", paste0(image_list[x], img_suffix)),
+                file.path(analysis_path, "2_cleaned", paste0(image_list[x], img_suffix)),
                 all = TRUE
             )
         )
@@ -176,7 +176,7 @@ CreateMantisFolder <- function(object,
 
         # Copy segmentation mask
         file.copy(
-            file.path(analysis_path, "3e_cellpose_mask", paste0(image_list[x], mask_suffix)),
+            file.path(analysis_path, "3_segmentation", "3c_cellpose_mask", paste0(image_list[x], mask_suffix)),
             file.path(mantis_path, imshort_list[x], "SegmentationFile.tif")
         )
 

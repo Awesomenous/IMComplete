@@ -9,7 +9,7 @@ CreateMantisFolder(
   img_suffix = "_full.tiff",
   mask_suffix = "_CpSeg_mask.tif",
   assay_name = "scale.data",
-  analysis_path = "analysis/3_segmentation",
+  analysis_path = "analysis",
   mantis_path = "analysis/5_R_analysis/MantisProject"
 )
 }

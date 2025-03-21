@@ -8,7 +8,7 @@ PlotHeatmap(
   object,
   prefix,
   annot_by,
-  genes = rownames(object),
+  features = rownames(object),
   assay_name = "scale.data",
   disp_min = NULL,
   disp_max = NULL,
@@ -25,7 +25,7 @@ PlotHeatmap(
 
 \item{annot_by}{A column in `colData` used for annotation.}
 
-\item{genes}{A character vector of gene names to include in the heatmap.
+\item{features}{A character vector of feature names to include in the heatmap.
 Default is all row names.}
 
 \item{assay_name}{A character string specifying the assay to use for plotting.
@@ -51,5 +51,5 @@ Creates a heatmap of feature expression from a `SpatialExperiment` object.
 Allows aggregation and annotation.
 }
 \examples{
-PlotHeatmap(object = spe, prefix = "Cluster", annot_by = "DonorID", genes = c("Gene1", "Gene2"))
+PlotHeatmap(object = spe, prefix = "Cluster", annot_by = "DonorID", features = c("Feature1", "Feature2"))
 }
