@@ -127,6 +127,9 @@ ClusterCells <- function(object,
         dplyr::select(-"uCellID") %>%
         S4Vectors::DataFrame()
 
+    # Add back the original object's rownames
+    colnames(object_ori) <- paste0(object_ori[["ImageID"]], "_", object_ori[["CellID"]])
+
     # Return the updated object
     return(object_ori)
 }
