@@ -49,7 +49,13 @@ CreateSpatialExperiment <- function(analysis_path = "analysis", raw_path = "raw"
     meta <- setdiff(colnames(dt), markers)
 
     counts <- dt[, markers]
-    metadata <- dt[, setdiff(meta, c("X","Y"))]
+    metadata <- dt[, setdiff(meta, c("X","Y"))] %>%
+        # Change variables to 'factor' type
+        dplyr::mutate(
+            Image = as.factor(.data$Image),
+            ImageID = as.factor(.data$ImageID),
+            DonorID = as.factor(.data$DonorID)
+        )
     coords <- dt[, c("X","Y")]
 
     # Create table of data for each marker
@@ -65,11 +71,6 @@ CreateSpatialExperiment <- function(analysis_path = "analysis", raw_path = "raw"
         spatialCoords = as.matrix(coords),
         sample_id = as.character(metadata[["ImageID"]])
     )
-
-    # Change variables to 'factor' type
-    spe[["Image"]] <- as.factor(spe[["Image"]])
-    spe[["ImageID"]] <- as.factor(spe[["ImageID"]])
-    spe[["DonorID"]] <- as.factor(spe[["DonorID"]])
 
     ### Assign colour palettes
     colour_vectors <- list()
