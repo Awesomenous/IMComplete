@@ -235,7 +235,7 @@ PlotRidge <- function(object,
 #' @param object A `SpatialExperiment` object.
 #' @param prefix A character string to filter clusters by prefix.
 #' @param annot_by A column in `colData` used for annotation.
-#' @param genes A character vector of gene names to include in the heatmap.
+#' @param features A character vector of feature names to include in the heatmap.
 #'   Default is all row names.
 #' @param assay_name A character string specifying the assay to use for plotting.
 #'   Default is `"scale.data"`.
@@ -254,11 +254,11 @@ PlotRidge <- function(object,
 #' @importFrom magrittr %>%
 #' @importFrom methods as
 #' @examples
-#' PlotHeatmap(object = spe, prefix = "Cluster", annot_by = "DonorID", genes = c("Gene1", "Gene2"))
+#' PlotHeatmap(object = spe, prefix = "Cluster", annot_by = "DonorID", features = c("Feature1", "Feature2"))
 PlotHeatmap <- function(object,
                         prefix,
                         annot_by,
-                        genes = rownames(object),
+                        features = rownames(object),
                         assay_name = "scale.data",
                         disp_min = NULL,
                         disp_max = NULL,
@@ -327,13 +327,13 @@ PlotHeatmap <- function(object,
             ids = SummarizedExperiment::colData(subset_object)$Cluster,
             statistics = "mean",
             use.assay.type = assay_name,
-            subset.row = genes
+            subset.row = features
         )
 
         p <- dittoSeq::dittoHeatmap(
             mean_aggregation,
             assay = assay_name,
-            genes = genes,
+            genes = features,
             cluster_rows = FALSE,
             scale = "none",
             heatmap.colors = grDevices::colorRampPalette(
@@ -349,7 +349,7 @@ PlotHeatmap <- function(object,
     # Generate heatmap without aggregation
     p <- dittoSeq::dittoHeatmap(
         subset_object,
-        genes = genes,
+        genes = features,
         cluster_rows = FALSE,
         assay = assay_name,
         scale = "none",
